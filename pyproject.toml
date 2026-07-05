@@ -1,0 +1,74 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "axiom-mcp-proxy"
+version = "0.1.0"
+description = "Datadog for MCP traffic — telemetry, proxy, and OWASP MCP Top 10 security engine for the Model Context Protocol."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [
+    { name = "TANMaYtO" },
+]
+keywords = ["mcp", "model-context-protocol", "observability", "security", "proxy"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: System :: Monitoring",
+    "Framework :: FastAPI",
+]
+
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "pydantic>=2.0",
+    "httpx>=0.27.0",
+    "faiss-cpu>=1.8.0",
+    "sentence-transformers>=3.0.0",
+    "aiosqlite>=0.20.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23.0",
+    "black>=24.0",
+    "ruff>=0.5.0",
+    "mypy>=1.10",
+]
+clickhouse = [
+    "clickhouse-connect>=0.7.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/TANMaYtO/AXIOM"
+Repository = "https://github.com/TANMaYtO/AXIOM"
+Issues = "https://github.com/TANMaYtO/AXIOM/issues"
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
