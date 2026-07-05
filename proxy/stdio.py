@@ -4,18 +4,24 @@ import asyncio
 import logging
 import sys
 import threading
-from typing import List
+from typing import List, Optional
 
-from proxy.parser import inspect_and_log_frame
+from proxy.parser import check_inbound_frame, check_outbound_frame
+from proxy.rug_pull import RugPullDetector
 
 logger = logging.getLogger("axiom.proxy.stdio")
 
 
-async def run_stdio_proxy(server_cmd: List[str]) -> int:
+async def run_stdio_proxy(
+    server_cmd: List[str], detector: Optional[RugPullDetector] = None
+) -> int:
     """Run an asynchronous stdio pass-through proxy in front of a target MCP server.
+
+    # MCP03 — Tool Poisoning / Rug-Pull Attack check
 
     Args:
         server_cmd: Command list to execute the target MCP server subprocess.
+        detector: Optional RugPullDetector instance for schema verification.
 
     Returns:
         The exit code of the target MCP server subprocess.
@@ -24,6 +30,11 @@ async def run_stdio_proxy(server_cmd: List[str]) -> int:
         sys.stderr.write("[AXIOM ERROR] No server command provided to proxy.\n")
         sys.stderr.flush()
         return 1
+
+    if detector is None:
+        detector = RugPullDetector()
+
+    server_identity = f"stdio:{' '.join(server_cmd)}"
 
     try:
         proc = await asyncio.create_subprocess_exec(
@@ -64,10 +75,14 @@ async def run_stdio_proxy(server_cmd: List[str]) -> int:
                 if proc.stdin is not None:
                     proc.stdin.close()
                 break
-            inspect_and_log_frame("Client -> Server", line)
-            if proc.stdin is not None:
-                proc.stdin.write(line.encode("utf-8"))
-                await proc.stdin.drain()
+            err_line = await check_inbound_frame(line, server_identity, detector)
+            if err_line is not None:
+                sys.stdout.write(err_line)
+                sys.stdout.flush()
+            else:
+                if proc.stdin is not None:
+                    proc.stdin.write(line.encode("utf-8"))
+                    await proc.stdin.drain()
 
     async def forward_outbound() -> None:
         """Read from server stdout, inspect frame, and write to client stdout."""
@@ -78,9 +93,10 @@ async def run_stdio_proxy(server_cmd: List[str]) -> int:
             if not line_bytes:
                 break
             line = line_bytes.decode("utf-8", errors="replace")
-            inspect_and_log_frame("Server -> Client", line)
+            await check_outbound_frame(line, server_identity, detector)
             sys.stdout.write(line)
             sys.stdout.flush()
+
 
     inbound_task = asyncio.create_task(forward_inbound())
     outbound_task = asyncio.create_task(forward_outbound())

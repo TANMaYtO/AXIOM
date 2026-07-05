@@ -39,6 +39,27 @@ def create_parser() -> argparse.ArgumentParser:
         nargs=argparse.REMAINDER,
         help="Target server command and arguments (e.g., -- python -m my_server).",
     )
+
+    sse_parser = subparsers.add_parser(
+        "sse-proxy",
+        help="Launch AXIOM as an SSE pass-through proxy in front of a remote MCP server.",
+    )
+    sse_parser.add_argument(
+        "--target",
+        required=True,
+        help="Target remote MCP server SSE URL (e.g., http://localhost:8000/sse).",
+    )
+    sse_parser.add_argument(
+        "--port",
+        type=int,
+        default=8080,
+        help="Local port for AXIOM SSE proxy server to listen on (default: 8080).",
+    )
+    sse_parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Local host interface to bind (default: 127.0.0.1).",
+    )
     return parser
 
 
@@ -65,9 +86,21 @@ async def async_main(args: Optional[List[str]] = None) -> int:
             sys.stderr.flush()
             return 1
         return await run_stdio_proxy(server_cmd)
+    elif parsed_args.command == "sse-proxy":
+        import uvicorn
+        from proxy.sse import create_sse_proxy_app
+
+        app = create_sse_proxy_app(target_url=parsed_args.target)
+        config = uvicorn.Config(
+            app, host=parsed_args.host, port=parsed_args.port, log_level="info"
+        )
+        server = uvicorn.Server(config)
+        await server.serve()
+        return 0
     else:
         parser.print_help(file=sys.stderr)
         return 1
+
 
 
 def main() -> None:
