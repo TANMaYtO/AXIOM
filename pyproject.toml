@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Datadog for MCP traffic — telemetry, proxy, and OWASP MCP Top 10 security engine for the Model Context Protocol."
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 authors = [
     { name = "TANMaYtO" },
 ]
@@ -18,6 +18,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -54,13 +55,16 @@ Homepage = "https://github.com/TANMaYtO/AXIOM"
 Repository = "https://github.com/TANMaYtO/AXIOM"
 Issues = "https://github.com/TANMaYtO/AXIOM/issues"
 
+[project.scripts]
+axiom = "cli.main:main"
+
 [tool.black]
 line-length = 88
-target-version = ["py311"]
+target-version = ["py310"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py311"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
@@ -70,5 +74,9 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.10"
 strict = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["proxy", "security_engine", "retrieval", "storage", "cli"]
+
